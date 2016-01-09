@@ -1,39 +1,76 @@
 from argparse import ArgumentParser
+from urllib.error import URLError
 from urllib.request import urlopen
 import html
 import json
 import re
 
 
-class Converter(object):
+# Class that takes care of conversion between the currencies
+class Converter:
 
-    def __init__(self, value, in_c, out_c):
-        self.amount = 0.0
-        self.outC = out_c
-        self.inC = in_c
-
+    def __init__(self):
+        """ Constructor """
+        self.amount = None
+        self.outC = None
+        self.inC = None
         self.symbols = Converter.get_currency_symbols()
+
+    def set_amount(self, amount):
+        """ Sets currency amount. """
+        if float(amount) < 0:
+            raise AttributeError("Invalid amount value")
+        self.amount = float(amount)
+
+    def set_input_currency(self, in_c):
+        """ Sets input currency.
+
+        @param in_c -- type of input currency
+        """
+        value = self._get_currencies_from_symbol(in_c)
+        if len(value) == 1:
+            self.inC = value[0]
+        else:
+            raise AttributeError("Input symbol '{0}' is ambiguous".format(in_c))
+
+    def set_output_currency(self, out_c):
+        """ Sets output currency.
+
+        @param out_c -- type of output currency
+        """
+        self.outC = []
+        if out_c is not None and len(out_c) != 0:
+            self.outC = self._get_currencies_from_symbol(out_c)
+
+    def _get_currencies_from_symbol(self, symbol):
+        """ Converts currency symbol to its ISO 4217 representation.
+
+        @param symbol -- one letter representing the currency or the ISO code
+        """
+        result = []
+        if len(symbol) == 1:
+            for k,v in self.symbols.items():
+                if v == symbol:
+                    result.append(k)
+        elif len(symbol) == 3:
+            result.append(symbol.upper())
+        else:
+            raise AttributeError("Unsupported symbol")
+        if len(result) == 0:
+            raise AttributeError("Unsupported currency")
+        return result
+
+    def convert(self, value, in_c, out_c):
+        """ Performs conversion between currencies.
+
+        @param value -- amount to convert
+        @param in_c  -- type of the input currency
+        @param out_c -- type of the output currency
+        """
         self.set_amount(value)
         self.set_input_currency(in_c)
         self.set_output_currency(out_c)
 
-    def set_amount(self, amount):
-        if float(amount) < 0:
-            AttributeError("Invalid amount value")
-        self.amount = float(amount)
-
-    def set_input_currency(self, in_c):
-        pass
-
-    def set_output_currency(self, out_c):
-        self.outC = [out_c]
-
-    def convert(self, value, in_c, out_c):
-        if not self._validate(value, in_c, out_c):
-            pass
-        self.convert()
-
-    def convert(self):
         data = self._get_data()
 
         result = Converter._get_output_structure()
@@ -45,36 +82,21 @@ class Converter(object):
                 result["output"][currency] = self.amount * rate
         else:
             for currency in self.outC:
-                rate = data["rates"][currency]
-                result["output"][currency] = self.amount * rate
+                if currency in data["rates"]:
+                    rate = data["rates"][currency]
+                    result["output"][currency] = self.amount * rate
         return result
 
     def _get_data(self):
+        """ Downloads data of currency conversion rates from API. """
         url = "http://api.fixer.io/latest?base={0}".format(self.inC)
         response = urlopen(url)
         string = response.read().decode('utf-8')
         return json.loads(string)
 
-    def _validate(self, value, in_c, out_c):
-        self.amount = value
-        self.inC = Converter._check_sign(in_c)
-        self.outC = dict()
-
-        if out_c is not None:
-            self.outC = Converter._check_sign(out_c)
-
-    @staticmethod
-    def _check_sign(currency):
-        if len(currency) == 1:
-            pass
-        elif len(currency) == 3:
-            pass
-        else:
-            pass
-        return currency
-
     @staticmethod
     def _get_output_structure():
+        """ Prepares data-structure for output. """
         structure = dict()
         structure["input"] = dict()
         structure["output"] = dict()
@@ -82,6 +104,7 @@ class Converter(object):
 
     @staticmethod
     def get_currency_symbols():
+        """ Fetches data containing currency symbols from Web. """
         result = dict()
         url = "http://www.currencysymbols.in"
         request = urlopen(url)
@@ -98,6 +121,7 @@ class Converter(object):
 
 
 def parse_args():
+    """ Sets up ArgumentParser and parses arguments. """
     parser = ArgumentParser(description="Currency converter")
     parser.add_argument('--amount', required=True, type=float, help='amount which we want to convert')
     parser.add_argument('--input_currency', required=True, help='input currency')
@@ -106,10 +130,19 @@ def parse_args():
 
 
 def main():
+    """ Entry point of the application. """
     args = parse_args()
-    converter = Converter(args.amount, args.input_currency, args.output_currency)
-    output = converter.convert()
-    print(json.dumps(output, sort_keys=True, indent=4, separators=(',', ': ')))
+    try:
+        converter = Converter()
+        output = converter.convert(args.amount, args.input_currency, args.output_currency)
+        print(json.dumps(output, sort_keys=True, indent=4, separators=(',', ': ')))
+    except AttributeError as e:
+        print(e)
+    except URLError:
+        print("Problem with connection to the remote service.")
+    except Exception:
+        print("Something broke down.")
+
 
 if __name__ == "__main__":
     main()
