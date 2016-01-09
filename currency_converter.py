@@ -10,8 +10,14 @@ class Converter:
             pass
         data = self._get_data()
 
+        result = Converter._get_output_structure()
+        result["input"]["amount"] = self.amount
+        result["input"]["currency"] = self.inC
+
         if self.outC is not None:
-            print(self.amount * data["rates"][self.outC])
+            result["output"][self.outC] = self.amount * data["rates"][self.outC]
+
+        return result
 
     def _get_data(self):
         url = "http://api.fixer.io/latest?base={0}".format(self.inC)
@@ -34,6 +40,13 @@ class Converter:
             pass
         return currency
 
+    @staticmethod
+    def _get_output_structure():
+        structure = dict()
+        structure["input"] = dict()
+        structure["output"] = dict()
+        return structure
+
 
 def parse_args():
     parser = ArgumentParser(description="Currency converter")
@@ -47,7 +60,7 @@ def main():
     args = parse_args()
     converter = Converter()
     output = converter.convert(args.amount, args.input_currency, args.output_currency)
-    print(output)
+    print(json.dumps(output, sort_keys=True, indent=4, separators=(',', ': ')))
 
 if __name__ == "__main__":
     main()
