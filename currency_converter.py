@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*- 
+
+# good to have ^
+
 from argparse import ArgumentParser
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -12,14 +17,14 @@ class Converter:
     def __init__(self):
         """ Constructor """
         self.amount = None
-        self.outC = None
-        self.inC = None
-        self.symbols = Converter.get_currency_symbols()
+        self.outC = None # naming (out_c)
+        self.inC = None # naming (in_c)
+        self.symbols = Converter.get_currency_symbols() # should be in 'load' section
 
     def set_amount(self, amount):
         """ Sets currency amount. """
         if float(amount) < 0:
-            raise AttributeError("Invalid amount value")
+            raise AttributeError("Invalid amount value") # nice
         self.amount = float(amount)
 
     def set_input_currency(self, in_c):
@@ -39,7 +44,7 @@ class Converter:
         @param out_c -- type of output currency
         """
         self.outC = []
-        if out_c is not None and len(out_c) != 0:
+        if out_c is not None and len(out_c) != 0: # why 'out_c is not None'.. same is just 'if out_c' not? :)
             self.outC = self._get_currencies_from_symbol(out_c)
 
     def _get_currencies_from_symbol(self, symbol):
@@ -97,7 +102,7 @@ class Converter:
     @staticmethod
     def _get_output_structure():
         """ Prepares data-structure for output. """
-        structure = dict()
+        structure = dict() # return {"input": {}, "output": {}} looks better for me.. but ok
         structure["input"] = dict()
         structure["output"] = dict()
         return structure
@@ -112,7 +117,7 @@ class Converter:
 
         table = re.search(r'(<table.*table>)', content, re.DOTALL).group(0)
 
-        items = re.findall(r'<tr>(.*?)</tr>', table, re.DOTALL)[1:]
+        items = re.findall(r'<tr>(.*?)</tr>', table, re.DOTALL)[1:] # nice
         for item in items:
             info = re.findall(r'<th>(.*?)</th>', item)
             result[info[3]] = html.unescape(info[4])
@@ -136,9 +141,9 @@ def main():
         converter = Converter()
         output = converter.convert(args.amount, args.input_currency, args.output_currency)
         print(json.dumps(output, sort_keys=True, indent=4, separators=(',', ': ')))
-    except AttributeError as e:
+    except AttributeError as e: #nice
         print(e)
-    except URLError:
+    except URLError: # nice
         print("Problem with connection to the remote service.")
     except Exception:
         print("Something broke down.")
@@ -146,3 +151,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+    
+albert.uchytil@windowslive.com	
+doc:9/10	code:8.5/10	 creativity_bonus:3/inf
