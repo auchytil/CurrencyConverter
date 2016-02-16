@@ -155,3 +155,6 @@ if __name__ == "__main__":
     
 albert.uchytil@windowslive.com	
 doc:9/10	code:8.5/10	 creativity_bonus:3/inf
+
+coefficients:
+doc:0.1	    code:0.7	creativity_bonus:0.2 
